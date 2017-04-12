@@ -1,0 +1,1593 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+	<title>EventBoard</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<!-- load the bootstrap stylesheet -->
+	<link href="vendor/bootstrap/css/bootstrap.min.css" media="all" rel="stylesheet" type="text/css"/>
+	<link href="css/jquery-ui.css" media="all" rel="stylesheet" type="text/css"/>
+	<link rel="stylesheet" type="text/css"
+	href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+	<link href="css/style.css" media="all" rel="stylesheet" type="text/css"/>
+	<link href="vendor/datepicker/css/bootstrap-datepicker.css" rel="stylesheet">
+	<style type="text/css"></style>
+</head>
+<body>
+	<input type="hidden" value="" id="block_id">
+	<input type="hidden" value="" id="userIP">
+	
+	<div id="page-top">
+		<div class="se-pre-con"></div>
+	</div>
+	<!-- First Screen -->
+	<script type="text/template" id="homeTemplate">
+		<section id="header">
+			<div class="header-content">
+				<div class="logo">
+					<img src="images/logo.png" alt="eventboard_logo">
+				</div>
+				<h1 id="homeHeading">EventBoard</h1>
+			</div>
+		</section>
+		<section id="section-header">
+			<div class="header-content home-header">
+				<div class="header-content-inner">
+					<input type="text" name="event_id" class="form-control" id="event_id" placeholder="Enter ID" value="">
+					<span class="id_error"></span>
+					<a href="javascript:void(0)" class="btn btn-default btn-black btn-block showEvent" id="showEvent">Enter</a>
+				</div>
+			</div>
+		</section>
+		<section id="footer">
+			<div class="footer-content">
+				<span> 
+					<a href="index.html#" class="clickhere">Want to create an Event? Click here!</a>
+				</span>
+			</div>
+		</section>
+	</script>
+
+	<!-- Second Screen -->
+	<script type="text/template" id="createTemplate">
+		<section id="header">
+			<div class="header-content">
+				<a href="javascript:void(0)" class="create_close">
+					<i class="fa fa-times-circle-o fa_plus_add " aria-hidden="true"></i>
+				</a>
+				<h3 id="headerHeading">Create Event</h3>
+			</div>
+		</section>
+		<section id="section-header" class="create-header">
+			<div class="header-content event-create">
+				<div class="header-content-inner">
+					<div class="form-row">
+						<label for="eventname" class="form-label">Event Name*</label>
+						<p>This name will be displayed for members to see</p>
+						<input type="text" name="eventName" id="eventname" class="form-control" placeholder="Event Name"
+						required="required" value="<% if(typeof (this.model.get('eventName')) !== 'undefined') { %><%= this.model.get('eventName')%><% } %>">
+						<span class="error-eventname"></span>
+					</div>
+					<div class="form-row">
+						<label for="email_create" class="form-label">Your Email*</label>
+						<p>We will send this email information needed to operate the event</p>
+						<input type="email" name="email" id="email_create" class="form-control" placeholder="Email"
+						required="required" value="<% if(typeof (this.model.get('email')) !== 'undefined') { %><%= this.model.get('email') %><% } %>">
+						<span class="error-email"></span>
+					</div>
+					<div class="form-row">
+						<label for="member_authority" class="form-label">No Event End Date</label>
+						<p>Turning this on will allow no event end date for event</p>
+						<label class="switch">
+							<input type="checkbox" name="noEventDate" id="noEventDate" <% if(typeof (this.model.get('hasEndDate')) !== 'undefined' && this.model.get('hasEndDate') == 'false') { %> checked="checked" <% } %>>
+							<div class="slider round"></div>
+						</label>
+					</div>
+					<div class="form-row" id="noEventEndDate" <% if(typeof (this.model.get('hasEndDate')) !== 'undefined' && this.model.get('hasEndDate') == 'false') { %> style="display : none" <% } %>>
+						<label for="event_duration" class="form-label">Event End Date</label>
+						<p>Enter the length of your event. After alloted time, the event will close</p>
+						<div class="form-group">
+							<div class='input-group date' id='datetimepicker'>
+								<input type='text' class="form-control" name="date" id="end_date" placeholder="DD/MM/YYYY" readonly="" value="<% if(typeof (this.model.get('date')) !== 'undefined' && this.model.get('hasEndDate') == 'true') { %><%= this.model.get('date') %><% } %>"/>
+								<span class="input-group-addon">
+									<span class="glyphicon glyphicon-calendar"></span>
+								</span>
+							</div>
+						</div>
+					</div>
+					<div class="form-row">
+						<label for="member_authority" class="form-label">Member Authority</label>
+						<p>Turning this on will allow any members to post on event</p>
+						<label class="switch">
+							<input type="checkbox" name="memberAuthority" id="memberAuthority" <% if(typeof (this.model.get('memberAuthority')) !== 'undefined' && this.model.get('memberAuthority') == 'true') { %> checked="checked" <% } %>>
+							<div class="slider round"></div>
+						</label>
+					</div>
+					<div>						
+						<% if(typeof (this.model.get('adminCode')) !== 'undefined') { %>
+						<button id="opener-4" class="btn btn-default btn-block btn-create posts">Update</button>
+						<% } 
+						else 
+						{ %>
+						<button id="opener-4" class="btn btn-default btn-block btn-create posts">Create</button>
+						<% } %>
+						<!-- <a href="createPost.html"  id="btncreate"></a> -->
+					</div>
+				</div>
+			</div>
+		</section>
+	</script>
+	<!-- Fourth Screen -->
+	<script type="text/template" id="createPost">
+		<section id="header">
+			<div class="header-content">
+				<a href="javascript:void(0)" class="back_postlist">
+					<i class="fa fa-times-circle-o fa_plus_add " aria-hidden="true"></i>
+				</a>
+				<h3 id="headerHeading">Create Post</h3>
+				<a href="index.html#" class="">
+					<i class="fa fa-check fa_plus_add my_popup" aria-hidden="true"></i>
+				</a>
+			</div>
+		</section>
+		<section id="section-header" class="create-header">
+			<div class="header-content event-create">
+				<div class="header-content-inner">
+					<div>
+						<% if(typeof (this.postModel) !== "undefined"){%> 
+						<div class="listing" id="textdata">
+							<span>
+								<div class="lists_options"></div>
+								<textarea class="form-control" name="description" id="description" placeholder="Enter the text..."
+								rows="5"><%- this.postModel.get('description') %></textarea>
+							</span>
+						</div>
+						<% if(typeof (this.postModel.get('extras')) !== "undefined"){%> 
+						<div class="">
+							<% var postSurveyObject = this.postModel.get('extras');%>
+							<% _.each(postSurveyObject.survey, function (value, key, survey) { %>
+							<div data-toggle="buttons" class=" option_listing">
+								<label class="btn btn-circle btn-default"></label><%= key %>
+							</div>
+							<% }); %>
+						</div>
+						<div class="listing">
+							<span>
+								<a href="index.html#" class="createsurvey">
+									<i class="fa fa-line-chart" aria-hidden="true"></i> Survey
+								</a>
+							</span>
+						</div>
+						<div class="listing hide" id="surveydata"></div>
+						<div class="listing hide" id="imageDiv">
+							<div class="preview-image">
+								<img id="show_image" src="index.html#" alt="your image" style="display:none"/>
+							</div>
+							<label>
+								<i class="fa fa-camera" aria-hidden="true"></i>
+								<input type="file" class="hidden" name="photo" id="photo" />
+								<span class="upload-image">Photo</span>
+							</label>
+						</div>
+						<% } else { %>
+						<div class="listing hide" id="surveydata"></div>
+						<div class="listing <% if(this.postModel.get('image') === ''){ %>hide<% } %>" id="imageDiv">
+							<div class="preview-image">
+								<img id="show_image" src="http://monadinfotech.com/eventboard/&lt;%-&#32;this.postModel.get('image')&#32;%&gt;" alt="your image" name="photo" id="photo" />
+							</div>
+							<label>
+								<i class="fa fa-camera" aria-hidden="true"></i>
+								<input type="file" class="hidden" name="photo" id="photo" />
+								<span class="upload-image">Photo</span>
+							</label>
+						</div>
+
+						<% } } else { %>
+						<div class="listing" id="textdata">
+							<span>
+								<div class="lists_options"></div>
+								<textarea class="form-control" name="description" id="description" placeholder="Enter the text..."
+								rows="5"></textarea>
+							</span>
+						</div>
+						<div class="listing hide" id="surveydata"></div>
+						<div class="listing" id="imageDiv">
+							<div class="preview-image">
+								<img id="show_image" src="index.html#" alt="your image" style="display:none"/>
+							</div>
+							<label>
+								<i class="fa fa-camera" aria-hidden="true"></i>
+								<input type="file" class="hidden" name="photo" id="photo" />
+								<span class="upload-image">Photo</span>
+							</label>
+						</div>
+						<div class="listing">
+							<span>
+								<a href="index.html#" class="createsurvey">
+									<i class="fa fa-line-chart" aria-hidden="true"></i> Survey
+								</a>
+							</span>
+						</div>
+						<% } %>
+						
+						<div class="listing hide">
+							<span>
+								<a href="index.html#" class="">
+									<i class="fa fa-map-marker" aria-hidden="true"></i> Location
+								</a>
+							</span>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</section>
+	<!-- Modal -->
+	<div id="my_popup" title="Enter Post Title" style="display: none;">
+		<input type="text" class="form-control" name="title" id="postTitle" placeholder="Post Title" <% if(typeof (this.postModel) !== "undefined"){%> value="<%- this.postModel.get('title') %>" <% } %>>
+		<span class="errors"></span>
+	</div>
+</script>
+<!-- Third Screen -->
+<script type="text/underscore" id="postsTemplate">
+	<section id="header">
+		<% oldSurevyAnswer = {};
+		var postCollection = this.model.get('posts');
+		var userType = $("#block_id").val();
+		if(userType === 'KfosZEHxkFU30VRkVlj'){
+		userType = 'admin';
+	}
+	%>
+	<div class="header-content">
+		<a href="javascript:void(0)" class="basepage">
+			<i class="fa fa-home fa_plus_add home-default" aria-hidden="true" title="Home"></i>
+		</a>
+		<h3 id="headerHeading"><%= this.model.get('eventName') %></h3>
+		<% if(userType == 'admin') { %>
+		<a href="index.html#" class="" title="Edit Event">
+			<i class="fa fa-pencil-square-o editEvent" aria-hidden="true"></i>
+		</a>
+		<%  }  %>
+		<% if(userType == 'admin' || this.model.get('memberAuthority') == 'true' ) { %>
+		<a href="index.html#" class="" title="Create new post">
+			<i class="fa fa-plus fa_plus_add addPost" aria-hidden="true"></i>
+		</a>
+		<%  }  %>	
+	</div>
+</section>
+<section id="section-header" class="create-header">
+	<div class="header-content create-content extraclass">
+		<div class="header-content-inner"></div>
+		<% oldSurevyAnswer = {}; %>		
+		<% var array = _.sortBy(postCollection, function(timestamp) {
+		return timestamp; 
+	});	%>
+	<% _.each(array.reverse(), function (post) {  %>
+	<%  if (post.hasSurvey != 'true') { %>
+	<div class="postDivision">
+		<div class="post-div">
+			<h2 class="post_title">	<%= post.title %></h2>
+			<% if(userType == 'admin') { %>
+			<a href="index.html#" class="editPost" title="Edit Post">
+				<i class="fa fa-pencil-square-o editPencil" aria-hidden="true" data-id="<%= post.id %>"></i>
+			</a>
+			<a href="javascript:void(0)" class="deletePost" title="Delete Post">
+				<i class="fa fa-trash-o" aria-hidden="true" data-id="<%= post.id %>"></i>
+			</a>
+			<% } %>
+			<pre class="question"><%= post.description %></pre>			
+			<%  if (typeof post.image !== "undefined" && post.image !== "") { %>
+			<div class="image-post">
+				<img class="lazy" src="
+				<%= post.image %>"/>
+			</div>
+			<%  }  %>
+			<div class="date_span">
+				<span class="votes"><%= post.date %>
+				</span>
+				<p><%= post.name %>
+				</p>
+			</div>
+		</div>
+	</div>
+	<%  }  
+	else
+	{
+	var surveyOption = '';						
+	if (typeof userIP !== "undefined" )
+	{ 
+	var postId= post.id;						
+	_.each(userIP, function (value, key, IP)
+	{
+
+	if( key === postId)
+	{											
+	surveyOption = value;											
+}
+}); 
+} %>
+<div class="postSurveyDivision">
+	<div class="post-div">
+		<h2 class="post_title"><%= post.title %></h2>
+		<% if(userType == 'admin') { %>
+		<a href="index.html#" class="editPost" title="Edit Post">
+			<i class="fa fa-pencil-square-o editPencil" aria-hidden="true" data-id="<%= post.id %>"></i>
+		</a>
+		<a href="javascript:void(0)" class="deletePost" title="Delete Post">
+			<i class="fa fa-trash-o" aria-hidden="true" data-id="<%= post.id %>"></i>
+		</a>
+		<%  } %>
+
+		<p class="question"><%= post.description %></p>
+		<% var surveyTotalAnswerCount = 0; %>
+		<% _.each(post.extras.survey, function (value, key, survey) {
+		var answerCount = value.count;
+		surveyTotalAnswerCount = surveyTotalAnswerCount+answerCount;
+	});
+	%>
+
+	<span class="votes"><%- surveyTotalAnswerCount %> Total Votes</span>
+	<br />
+	<div class="" id="survey<%= post.id %>">
+		<% _.each(post.extras.survey, function (value, key, survey) { 
+		var surveyAnswerPer = 0;
+		if(surveyTotalAnswerCount !== 0){
+		surveyAnswerPer = value.count;
+		surveyAnswerPer = (surveyAnswerPer * 100)/surveyTotalAnswerCount;
+		surveyAnswerPer = Number(surveyAnswerPer);
+		surveyAnswerPer = surveyAnswerPer.toPrecision(4)
+	}	
+
+	%>
+	<% if(surveyOption !== '' && surveyOption === key)
+	{ 
+	var acttiveClass = 'btn btn-circle btn-default active';
+	var checkedOption = 'checked="checked"';						 		
+}
+else
+{
+	var acttiveClass = 'btn btn-circle btn-default';
+	var checkedOption = '';
+} %>
+
+<div data-toggle="buttons" class="option_listing">
+	<label class="<%- acttiveClass %>" id="<%= key %>">
+		<input type="radio" name="options" class="surveyOptions" id="<%= post.id %>" value="<%= key %>" 
+		<%= checkedOption %>>
+	</label><%= key %>
+	<p class="user_rating"><%- surveyAnswerPer %> %</p>
+</div>
+<% }); %>
+</div>
+<div class="date_span">
+	<span class="votes"><%= post.date %>
+	</span>
+	<p><%= post.name %>
+	</p>
+</div>
+</div>
+</div>
+<%  } %>
+<% }); %>
+</div>
+</section>
+</script>
+
+<script type="text/template" id="surveyTemplate">
+	<section id="header">
+		<div class="header-content">
+			<a href="javascript:void(0)" class="cancelSurveyPost">
+				<i class="fa fa-times-circle-o fa_plus_add "
+				aria-hidden="true"></i>
+			</a>
+			<h3 id="headerHeading">Create Survey</h3>
+			<a href="index.html#" class="addSurvey">
+				<i class="fa fa-check fa_plus_add tick" aria-hidden="true"></i>
+			</a>
+		</div>
+	</section>
+	<section id="section-header" class="create-header">
+		<div class="header-content event-create">
+			<div class="header-content-inner">
+				<div class="form-row">
+					<label class="form-label add_items">Add Items to your survey</label>
+					<div class="item_div">
+						<a href="index.html#" class="add_new_item">
+							<i class="fa fa-plus add_icon" title="Add"></i>
+						</a>
+						<input type="text" name="new_item" id="new_item" class="form-control custom_text" placeholder="New Item">
+						<br />
+						<span class="item_error"></span>
+					</div>
+					<div class="list_option"><%  if (typeof this.model.extras !== "undefined") { %><% _.each(this.model.extras.survey, function (value, key, survey) { %>
+						<div class="option_items">
+							<%= key %>
+							<a href="index.html#" class="remove_item">
+								<i class="fa fa-minus-circle remove_icon" aria-hidden="true" title="Remove" data-id="<%= key %>"></i>
+							</a>
+						</div>
+						<% }); } %>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</section>
+</script>
+<script type="text/template" id="surveyList">
+	<% 
+	_.each(this.model.toJSON(), function (value, key) {
+	%>
+	<div class="option_items">
+		<%- key %>
+		<a href="index.html#" class="remove_item" >
+			<i class="fa fa-minus-circle remove_icon" aria-hidden="true" title="Remove" data-id="<%- key %>"></i>
+		</a>
+	</div>
+	<% }); %>
+	
+</script>
+<script type="text/template" id="postItemTemplate"><%  if (post.hasSurvey == 'true') { %>
+	<div class="post-div">
+		<div class="listing" id="textdata">
+			<span>
+				<div class="lists_options"></div>
+				<textarea class="form-control" name="surveyDescription" id="surveyDescription" placeholder="Enter the text..."
+				rows="3"><%= post.description %></textarea>
+			</span>
+		</div>
+		<div class=""><% _.each(post.extras.survey, function (value, key, survey) { %>
+			<div data-toggle="buttons" class=" option_listing">
+				<label class="btn btn-circle btn-default"></label><%= key %>
+			</div><% }); %>
+		</div>
+	</div>
+</div><%  } %>
+</script>
+
+<!-- load the libraries we need -->
+<script type="text/javascript" src="vendor/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="js/jquery-ui.min.js"></script>
+<!-- <script type="text/javascript" src="js/jquery.lazyload.js"></script> -->
+<script type="text/javascript" src="js/loadingoverlay.min.js"></script>
+<script type="text/javascript" src="js/loadingoverlay_progress.min.js"></script>
+
+<script src="js/underscore-min.js"></script>
+<script src="js/backbone.js"></script>
+<script src="vendor/datepicker/js/bootstrap-datepicker.min.js"></script>
+
+<!-- Firebase -->
+<script src="https://cdn.firebase.com/js/client/2.0.3/firebase.js"></script>
+<script src="https://www.gstatic.com/firebasejs/3.7.0/firebase.js"></script>
+<!-- BackboneFire -->
+<script src="https://cdn.firebase.com/libs/backbonefire/0.5.1/backbonefire.js"></script>
+
+<script type="text/javascript" src="http://sean1093.github.io/lib/js/timeSolver/1.0.6/timeSolver.min.js"></script>
+
+<script src="http://cdnjs.cloudflare.com/ajax/libs/modernizr/2.8.2/modernizr.js"></script>
+
+<!-- load our scripts -->
+<script type="text/javascript">
+	(function ($) {
+		var config =
+		{  apiKey: "AIzaSyD9Bq9y88p0IPHLPTcNjQF6bgGgMbQGUBE",
+		authDomain: "eventsapp-cfd52.firebaseapp.com",
+		storageBucket: "eventsapp-cfd52.appspot.com"
+	};
+	window.firebase.initializeApp(config);  
+	var storage = firebase.storage();
+
+
+        ///////////////////EVENT MODEL SECTION STRAT HERE/////////////////////////
+
+
+        //Model created for single Event
+        var eventFBModel = Backbone.Model.extend({        	
+        	/*urlRoot: 'https://eventsapp-cfd52.firebaseio.com/Events',
+        	autoSync: true,*/
+        	default: {
+        		//currentNum: 0,
+        		memberAuthority: "false",
+        		hasEndDate: "true"
+        	},
+        	initialize: function() {
+        		
+			   // assuming Players a collection of players
+			   //this.set('posts', new eventPostsCollection());
+			}
+		});
+
+        var eventsFBCollection = Backbone.Firebase.Collection.extend({        	
+        	url: 'https://eventsapp-cfd52.firebaseio.com/Events',
+        	autoSync: true,
+        	model: eventFBModel
+        });
+
+        eventFBCollectionObject = new eventsFBCollection;
+		//////////////// EVENT MODEL SECTION END HERE////////////////////
+		///////// POST MODEL SECTION START HERE///////////////////
+		//var eventDatabaseID = $('#eventID').val();
+
+        //Model created for single Event
+        var eventPost = Backbone.Model.extend({ 
+        	//url : 'https://eventsapp-cfd52.firebaseio.com/Events/' + eventDatabaseID + '/posts',
+        	default: {
+        		hasSurvey: 'false',
+        		image: '',
+        		isAdmin: false,
+        		name: 'by User',
+        		timestamp: 0
+        	} , 
+        	 //autoSync: true,  	
+        	});       
+
+        var eventPostsCollection = Backbone.Firebase.Collection.extend({
+
+        	model: eventPost,				
+        	url: function() {
+        		return new Firebase('https://eventsapp-cfd52.firebaseio.com/Events/' + this.event_id + '/posts');
+        	}, 
+        	autoSync: true,
+        	initialize: function(models, options){
+
+        		this.event_id = options.event_id;					
+        	}
+
+        });
+
+        var userModel = Backbone.Firebase.Model.extend({	
+
+        	url: function() {
+        		return new Firebase('https://eventsapp-cfd52.firebaseio.com/Events/' + this.event_id + '/users/' + this.userIPAddress);
+        	}, 
+        	autoSync: true,
+        	initialize: function(models, options){					
+        		this.event_id = options.event_id;
+        		this.userIPAddress = options.userIPAddress;					
+        	}
+        }); 
+
+        var surveyoptions = Backbone.Firebase.Model.extend({
+
+        	url: function() {
+        		return new Firebase('https://eventsapp-cfd52.firebaseio.com/Events/' + this.event_id + '/posts/' + this.post_id +'/extras/survey');
+        	}, 
+        	autoSync: true,
+        	initialize: function(models, options){					
+        		this.event_id = options.event_id;
+        		this.post_id = options.post_id;
+        	}
+        });      
+
+		///////// POST MODEL SECTION END HERE///////////////////
+
+		///////// SURVEY MODEL SECTION START HERE///////////////////
+
+        //Model created for single Event
+        var postSurvey = Backbone.Model.extend({
+        });
+
+        var utility = Backbone.Model.extend({});
+
+		///////// SURVEY MODEL SECTION END HERE///////////////////
+
+
+		/////////CREATE EVENT SCREEN START HERE////////////////
+		var createEvent = Backbone.View.extend({
+			
+			el: '#page-top',
+			
+			createEventTemplate: _.template( $('#createTemplate').html() ),
+
+			events: {
+                "click .posts": "createEventNew",    //Create button on create event view page
+                "click .create_close": "createClose",   //Close icon on create event view page
+                "click #datetimepicker":"datePicker",
+                "click #noEventDate":"noEventDate",
+                "click #memberAuthority":"memberAuthority"
+            },
+
+            initialize: function () {
+            	this.listenTo(this.model, 'add', this.render);
+            	this.listenTo(this.model, 'change', this.render);
+            	this.listenTo(this.model, 'reset', this.render);
+            	this.listenTo(this.model, 'delete', this.render);
+            	this.listenTo(this.model, 'set', this.render);
+            	this.listenTo(this.model, 'all', this.render);
+            	this.memberAuthority= 'false';
+            	this.hasEndDate= 'true';
+            	this.render();
+            },
+
+            render: function () {
+            	$("#page-top").html(this.createEventTemplate({model: this.model}));
+            	this.datePicker();
+            	return this;
+            },
+            renderUpdateEvent: function () {
+            	var createtemplate = _.template($('#updateEventTemplate').html());
+            	$("#page-top").html(createtemplate({event:this.event}));
+            	return this;
+            },
+
+            datePicker: function()
+            { 
+            	$('#datetimepicker').datepicker({format: 'DD, MM dd, yyyy',startDate: new Date(),});   
+
+            },
+            
+            noEventDate: function()
+            {	  
+            	if($('#noEventDate').is(':checked')) {
+            		$('#noEventEndDate').hide();
+            		$("#end_date").val('');		
+            		this.hasEndDate= 'false';
+
+            	}else{
+            		$('#noEventEndDate').show();
+            		
+            	}
+            },
+
+            memberAuthority: function()
+            {	  
+            	if($('#memberAuthority').is(':checked')) {
+
+            		this.memberAuthority = 'true';		    
+            	}
+            },
+            createClose: function () {
+            	if( typeof (this.model.get('adminCode')) === 'undefined') {
+            		location.reload();
+            	}else{
+            		if (confirm('Are you sure to leave?')) {
+            			var eventID = this.model.get("adminCode");
+	            		var router = new MyRouter;
+						router.navigate("event/"+eventID+"/new", { trigger: true});
+            		}	
+            	}	
+            },
+            createEventNew: function () {
+
+            	$(".error-eventname").text('');
+            	$(".error-email").text('');
+
+            	$( "#eventname" ).keypress(function() {
+            		$(".error-eventname").text('');
+            	});
+
+            	$( "#email_create" ).keypress(function() {
+            		$(".error-email").text('');
+            	});
+
+            	var email 		= $("#email_create").val();
+            	var endDate 	= $("#end_date").val();
+            	var eventName 	= $("#eventname").val();
+            	var surveyEndDate = 'false';
+            	//if blank consider upto 100 years
+            	if(endDate === '') {
+            		endDate = 'Friday, January 1, 2117';
+            		surveyEndDate = 'true';
+            	}             	
+
+            	if( typeof (this.model.get('adminCode')) === 'undefined') {
+            		
+            		if( eventName == '' )
+            		{
+            			$(".error-eventname").text('Event name required.');
+            			return false;
+            		}
+            		//used as received custom expression found from stackOverflow
+            		var reg = /^([a-z\d!#$%&'*+\-\/=?^_`{|}~\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF]+(\.[a-z\d!#$%&'*+\-\/=?^_`{|}~\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF]+)*|"((([ \t]*\r\n)?[ \t]+)?([\x01-\x08\x0b\x0c\x0e-\x1f\x7f\x21\x23-\x5b\x5d-\x7e\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF]|\\[\x01-\x09\x0b\x0c\x0d-\x7f\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF]))*(([ \t]*\r\n)?[ \t]+)?")@(([a-z\d\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF]|[a-z\d\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF][a-z\d\-._~\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF]*[a-z\d\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])\.)+([a-z\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF]|[a-z\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF][a-z\d\-._~\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF]*[a-z\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])\.?$/i;
+            		
+            		if (!reg.test(email)){
+            			$(".error-email").text('Enter valid email.');
+            			return false;
+            		}
+
+            		var randomEventID = Math.random().toString(36).substr(2, 4);
+            		var randomCode 	  = Math.random().toString(36).substr(2, 4) + randomEventID;
+            		
+            		this.model.set('date', endDate);
+            		
+            		this.model.set('eventName', eventName);
+            		this.model.set('id', randomEventID);
+            		this.model.set('adminCode', randomCode);
+            		this.model.set('email', email);
+            		this.model.set('memberAuthority', this.memberAuthority);
+            		this.model.set('hasEndDate', this.hasEndDate);
+            		this.model.set('currentNum', 1);
+            		$('#block_id').val("KfosZEHxkFU30VRkVlj");            		
+
+            		eventFBCollectionObject.create(this.model);
+
+            		//eventFBCollectionObject.add(this.model, {merge: true});
+
+            		//---------------------------------------------//
+            		//Default Admin POST for EventCode Provisioning 
+	            		var eventPostsCollectionObj = new eventPostsCollection([],{event_id: randomEventID});
+						
+						var userType 			= 'By Admin';							
+						var timestamp 			= 0;		
+						var postCreationDate 	= Date(); 
+
+						// Creating New Admin POST Model
+						var eventPostModel 		=  new eventPost;
+						
+						eventPostModel.set('title', 'Welcome Event Post');
+	               		eventPostModel.set('description', 'To access again this will be => EventCode: ' + randomEventID );
+	               		eventPostModel.set('timestamp',timestamp);								
+	               		eventPostModel.set('hasSurvey', 'false');
+	               		eventPostModel.set('isAdmin', 'true');
+	               		eventPostModel.set('name', 'by Admin');
+	               		eventPostModel.set('image','');
+	               		eventPostModel.set('date', postCreationDate);
+
+	               		eventPostsCollectionObj.create(eventPostModel.toJSON());
+
+	               		
+               		//---------------------------------------------//            		
+
+            		if(confirm('Event created successfully. Event Code: '+ randomEventID + ' and Admin Code: ' + randomCode)){
+            			var router = new MyRouter;
+						router.navigate("event/"+randomCode+"/new", { trigger: true});
+            		}
+            		
+            		
+
+            	}else{
+
+            		if( eventName == '' )
+            		{
+            			$(".error-eventname").text('Event name required.');
+            			return false;
+            		}
+            		//used as received custom expression found from stackOverflow
+            		var reg = /^([a-z\d!#$%&'*+\-\/=?^_`{|}~\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF]+(\.[a-z\d!#$%&'*+\-\/=?^_`{|}~\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF]+)*|"((([ \t]*\r\n)?[ \t]+)?([\x01-\x08\x0b\x0c\x0e-\x1f\x7f\x21\x23-\x5b\x5d-\x7e\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF]|\\[\x01-\x09\x0b\x0c\x0d-\x7f\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF]))*(([ \t]*\r\n)?[ \t]+)?")@(([a-z\d\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF]|[a-z\d\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF][a-z\d\-._~\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF]*[a-z\d\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])\.)+([a-z\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF]|[a-z\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF][a-z\d\-._~\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF]*[a-z\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])\.?$/i;
+            		
+            		if (!reg.test(email)){
+            			$(".error-email").text('Enter valid email.');
+            			return false;
+            		}
+
+            		this.model.set('date', endDate);
+            		this.model.set('eventName', eventName);
+            		this.model.set('email', email);
+            		this.model.set('memberAuthority', this.memberAuthority);
+            		this.model.set('hasEndDate', this.hasEndDate);
+            		this.model.set('eventName', eventName);
+            		
+            		var eventID = this.model.get("adminCode");
+            		var router = new MyRouter;
+					router.navigate("event/"+eventID+"/new", { trigger: true});
+            	}
+            }
+        });
+
+        //create Survey screen
+        var createSurvey = Backbone.View.extend({
+        	
+        	el: '#page-top',
+        	
+        	surveyTemplate: _.template($('#surveyTemplate').html()),
+
+        	surveyItemTemplate: _.template($('#surveyList').html()),
+
+        	events: {
+        		"click .add_new_item": "addItem",
+        		"click .tick": "addSurveyPost",
+        		"click .cancelSurveyPost": "cancelSurveyPost",
+        		'click .remove_item':	'clear',
+        		// "click .remove_item": "removeItem"
+        	},
+
+        	initialize: function (options) {
+
+        		this.model = options.model;
+        		this.postModel = options.postModel;
+        		
+        		this.listenTo(this.model, 'all', this.render);        		
+        		this.listenTo(this.postModel, 'all', this.render);
+
+        		//temp storage for template
+        		this.utility = new utility;
+
+        		//temp storage for survey items
+        		this.utilityItem = new utility;
+
+        		if(typeof (this.postModel.get('extras')) !== 'undefined'){
+
+        			var postSurveyObject = this.postModel.get('extras');
+        			self =this;
+
+        			_.each(postSurveyObject.survey, function (value, key, survey) {
+        				self.utilityItem.set(key, {count: value.count});
+        			});
+
+        		}
+
+        		// this.$listOptions = $('.list_option');
+        		$('.list_option').html('');
+        		this.render();
+        		
+        	},
+
+        	render: function () {         		
+        		this.$el.html(this.surveyTemplate({postModel: this.postModel}));
+        		$('.list_option').html('');
+        		var surveyItemViewObject = new surveyItemView({model: this.utilityItem});
+        		$('.list_option').html(surveyItemViewObject.render().el);
+
+        		return this;
+        	},
+        	
+        	addItem: function (e) {
+        		
+        		$(".item_error").text('');
+        		
+        		$( "#new_item" ).keypress(function() {
+
+        			$(".item_error").text('');
+        		});
+
+        		if($("#new_item").val() == ''){
+
+        			$(".item_error").text('Please add item name to proceed.');
+        			return false;
+        		} else {
+        			
+        			var itemName = $("#new_item").val(); 
+
+        			var countTemplate = {count: 0};
+        			
+        			this.utilityItem.set(itemName, countTemplate);
+
+        			//Reseting value once added to model
+        			$("#new_item").val('');
+
+        			this.utility.set('survey', this.utilityItem.toJSON());
+
+        			this.postModel.set("extras",this.utility.toJSON());
+
+        		}
+        		
+        	},
+
+
+        	addSurveyPost: function (e) { 
+        		var itemList = this.postModel.get("extras");
+
+        		if(jQuery.isEmptyObject(itemList.survey))
+        		{
+        			alert('Please add atleast 1 item in the list.');
+        			return false;
+        		}
+        		var createEventPostView = new createEventPost({ model:this.model, postModel : this.postModel});
+
+        	},
+
+        	cancelSurveyPost: function () {
+        		var userType = $("#block_id").val();
+
+				if(userType === 'KfosZEHxkFU30VRkVlj'){
+					userType = 'admin';
+					eventModelID = this.model.get('adminCode');
+				}
+				else
+				{
+					eventModelID = this.model.get('id');
+				}
+				
+				var router = new MyRouter;
+
+				router.navigate("event/"+eventModelID+"/new", { trigger: true});		        		
+
+        	},
+        	clear: function (e) {
+
+        		var countTemplate = {count: 0};
+        		var itemId = $(e.target).data("id");
+        		this.utilityItem.unset(itemId, countTemplate);
+        		this.utility.set('survey', this.utilityItem.toJSON());
+        		this.postModel.set("extras",this.utility.toJSON());
+        	}
+        });
+
+
+        var surveyItemView = Backbone.View.extend({
+        	
+        	tagName:  'div',
+
+        	template: _.template($('#surveyList').html()),
+
+			// The DOM events specific to an item.
+			events: {
+				'click .remove_item':	'clear',
+			},
+
+			initialize: function (){
+				this.listenTo(this.model, 'all', this.render);
+				this.listenTo(this.model, 'destroy', this.remove);
+			},
+
+			render: function () {
+
+				this.$el.html(this.template(this.model.toJSON()));
+				return this;{}
+			},	
+			// Remove the item, destroy the model from *localStorage* and delete its view.
+			
+
+		});
+
+
+        var surveyData = Backbone.View.extend({
+        	el: '#page-top',
+        	template: $('#postItemTemplate').html(),
+
+        	initialize: function (options) {
+        		this.post=options.post;
+        		this.render();
+        	},
+
+        	render: function () {        		
+        		$('#surveydata').removeClass('hide');
+        		var surveylist = _.template(this.template);
+        		$('#surveydata').html(surveylist({post:this.post}));
+        		return this;
+        	}
+
+        });
+
+        ////////////////event created and post list render ///////////////////
+        var showEvent = Backbone.View.extend({
+
+        	el: '#page-top',
+
+        	postListViewTemplate: _.template($('#postsTemplate').html()),
+
+        	initialize: function () {			
+        		this.listenTo(this.model, 'add', this.render);
+        		this.listenTo(this.model, 'change', this.render);
+        		this.listenTo(this.model, 'reset', this.render);
+        		this.listenTo(this.model, 'delete', this.render);
+        		this.listenTo(this.model, 'set', this.render);
+        		this.listenTo(this.model, 'all', this.render);
+        		this.render();
+        	},
+
+        	events: {
+        		"click .addPost": "createPost",
+        		"click .basepage": "basePage",
+        		"click .editEvent": "editEvent",
+        		"click .surveyOptions":"radioClick",
+        		"click .editPost":"editPost",
+        		"click .deletePost":"deletePost"
+        	},
+
+        	render: function () {
+        		var users = {};
+        		users = this.model.get('users');       		
+        		var UserIPAddress = $("#userIP").val();
+        		if(typeof (users) !== "undefined" && typeof (users[UserIPAddress]) !== "undefined"){
+        			users = users[UserIPAddress]; 
+        		}
+
+        		$("#page-top").html(this.postListViewTemplate({model: this.model, userIP:users}));
+        		// this.$el.find('.lazy').lazyload();
+        		this.$el.find('.lazy').LoadingOverlay("show");
+        		this.$el.find('.lazy').LoadingOverlay("hide", true);
+        		return this;
+        	},
+        	
+        	radioClick: function(e){        		
+        		
+        		var userIPAddress = $("#userIP").val();
+        		var optionValue = $("input[name='options']:checked").val();             
+        		var surveyEventId = this.model.get('id');
+        		var surveyPostID = $("input[name='options']:checked").attr('id'); 
+        		var servyAnswer = getCookie(surveyPostID);       		
+				
+        		var userRecords = new userModel([],{event_id: surveyEventId , userIPAddress: userIPAddress}); 
+        		var surevyoptionsobject = new surveyoptions([],{event_id: surveyEventId , post_id: surveyPostID}); 
+
+        		var oldSurevyAnswerValue =userRecords.get(surveyPostID);
+
+        		// Check if cookies is exist for survey answer 
+        		if(servyAnswer){ 
+
+        			return false;       				
+        			
+        		}
+
+        		// Set Cookies for 10 second
+        		setCookie(surveyPostID, optionValue, (10*1000));
+        		
+        		var surveyPost = this.model.get("posts");;
+        		surveyPost = surveyPost[surveyPostID].extras.survey;
+
+        		surveyCount = surveyPost[optionValue].count;
+        		
+        		var updateCountValue = parseInt(surveyCount);
+        		updateCountValue = updateCountValue +1;
+        		
+
+
+        		if(typeof (oldSurevyAnswerValue) !== "undefined"){
+        			if(typeof (surveyPost[oldSurevyAnswerValue]) !== "undefined")
+        			{
+        				oldSurveyCount = surveyPost[oldSurevyAnswerValue].count;
+	        			var updateOldCountValue = parseInt(oldSurveyCount);
+
+	        			if(updateOldCountValue >= 1)
+	        			{
+	        				updateOldCountValue = updateOldCountValue -1;
+	        			}	
+	        			if(optionValue !== oldSurevyAnswerValue)
+	        			{
+	        				surevyoptionsobject.set(optionValue ,{'count':updateCountValue});
+	        				surevyoptionsobject.set(oldSurevyAnswerValue ,{'count':updateOldCountValue});
+	        			}        
+        			}else{
+        				surevyoptionsobject.set(optionValue ,{'count':updateCountValue});
+        			}
+        						
+        		}else{
+        			surevyoptionsobject.set(optionValue ,{'count':updateCountValue});
+        		}
+
+        		userRecords.set(surveyPostID ,optionValue);
+        		window.location.reload();
+        	},
+
+        	createPost: function () {  
+        		var createEventPostView = new createEventPost({ model:this.model });
+        	},
+
+        	editEvent: function () {
+        		
+        		var editEventView = new createEvent( {model: this.model} );
+        	},
+
+        	deletePost: function(e) {
+        		e.stopImmediatePropagation();
+        		if (confirm('Are you sure to delete the post?')) {
+        			var postId = $(e.target).data("id");
+        			var deletePostObject =this.model.get("posts");
+        			deletePostObject = deletePostObject[postId];
+        			var eventIDObj = this.model.get("id");
+        			var currentNum = this.model.get("currentNum");        			
+        			currentNum = currentNum - 1;
+
+        			var eventPostsCollectionObj = new eventPostsCollection([],{event_id: eventIDObj});
+
+        			eventPostsCollectionObj.remove(deletePostObject);
+
+        			this.model.set("currentNum", currentNum);
+
+        			var userType = $("#block_id").val();
+
+					if(userType === 'KfosZEHxkFU30VRkVlj'){
+						userType = 'admin';
+						eventModelID = this.model.get('adminCode');
+					}
+					else
+					{
+						eventModelID = eventIDObj;
+					}
+
+					var router = new MyRouter;
+
+					router.navigate("event/"+eventModelID+"/new", { trigger: true});
+        		}
+        		
+        	},
+
+        	editPost: function(e){ 
+        		var postId = $(e.target).data("id");
+        		var editPostObject = this.model.get("posts");
+        		editPostObject = editPostObject[postId];
+        		var eventPostModel =  new eventPost(editPostObject);       		
+
+        		var editEventPostView = new createEventPost({ model:this.model, postModel : eventPostModel});
+        		
+        	},
+
+        	basePage: function () {
+        		var hasURL = window.location.hash;        		
+        		window.location.href = window.location.href.replace(hasURL, '');
+        	}
+
+
+        });
+
+        //createpost screen
+        var createEventPost = Backbone.View.extend({
+        	
+        	el: "#page-top",
+        	
+        	eventPosttemplate: _.template( $('#createPost').html() ),
+        	
+        	events: {        		
+        		"click .createsurvey": "createSurvey",
+        		"click .back_postlist": "cancelPost",
+        		"click .my_popup": "my_popup",
+        		"click .upload-image": "show_photo",
+        		
+        	},
+
+        	initialize: function (options) {
+        		
+        		this.model = options.model;
+
+        		if(typeof (options.postModel) !== "undefined"){
+        			this.postModel = options.postModel;
+        			this.listenTo(this.postModel, 'all', this.render);
+        		}
+
+        		this.listenTo(this.model, 'add', this.render);
+        		this.listenTo(this.model, 'change', this.render);
+        		this.listenTo(this.model, 'reset', this.render);
+        		this.listenTo(this.model, 'delete', this.render);
+        		this.listenTo(this.model, 'set', this.render);
+        		this.listenTo(this.model, 'all', this.render);
+
+        		
+        		this.render();
+
+        	},
+
+        	render: function () {
+
+        		navigator.sayswho = (function(){
+        			var ua = navigator.userAgent, tem, 
+        			M = ua.match(/(opera|chrome|safari|firefox|msie|trident(?=\/))\/?\s*(\d+)/i) || [];
+        			if(/trident/i.test(M[1])){
+        				tem=  /\brv[ :]+(\d+)/g.exec(ua) || [];
+        				return 'IE '+(tem[1] || '');
+        			}
+        			if(M[1] === 'Chrome'){
+        				tem = ua.match(/\b(OPR|Edge)\/(\d+)/);
+        				if(tem != null) return tem.slice(1).join(' ').replace('OPR', 'Opera');
+        			}
+        			M = M[2]? [M[1], M[2]]: [navigator.appName, navigator.appVersion, '-?'];
+        			if((tem = ua.match(/version\/(\d+)/i)) != null) M.splice(1, 1, tem[1]);
+        			return M.join(' ');
+
+        		})();
+
+        		if (typeof(this.postModel) !== "undefined")
+        		{ 
+        			$("#page-top").html(this.eventPosttemplate({model: this.model,postModel : this.postModel}));
+        			
+        			
+        		}
+        		else{
+
+        			$("#page-top").html(this.eventPosttemplate({model: this.model}));
+        		}	
+        		
+        		var str = navigator.sayswho;
+        		if(parseInt(str.split(" ")[1]) < 10) {
+
+        			$(this.eventPosttemplate).find('#imageDiv').hide();
+        		}
+        		
+        		return this;
+        	},
+
+        	
+        	show_photo: function() { 
+        		
+        		document.getElementById("photo").onchange = function () {
+        			$("#show_image").show();	
+        			var reader = new FileReader();
+        			
+        			reader.onload = function (e) {
+			        	// get loaded data and render thumbnail.
+			        	document.getElementById("show_image").src = e.target.result;
+			        };
+
+				    // read the image file as a data URL.
+				    reader.readAsDataURL(this.files[0]);
+				};
+			},
+
+			my_popup: function() { 
+
+				self = this;
+
+				$(".errors").text('');
+
+				$( "#postTitle" ).keypress(function() {
+					$(".errors").text('');
+				});
+				
+				//Enter post title popup
+				var theDialog = $("#my_popup").dialog({                
+					modal: true,                
+					autoOpen: false,                
+					buttons: [{
+						class: "btn btn-danger btn-sm btn-close",
+						text: "Cancel",
+						click: function() {
+							$(this).dialog('close');
+							theDialog = '';
+							$("#postTitle").val('');
+						}
+					},
+					{
+						class:"btn btn-success btn-sm ok btn-ok createPostTick",
+						text: "Post",
+
+						click: function() {
+
+							var postTitle       = $("#postTitle").val();
+							var postDescription = $("#description").val();
+							var postCreationDate = Date();//$.datepicker.formatDate('DD, MM dd, yy hh:ii:ss', new Date());
+							
+							if (postTitle == '') {
+								$(".errors").text('Please enter post title.');
+								return false;
+							} else {								
+								$(".se-pre-con").fadeOut(2000);
+								// Creating New Post Model
+								var eventPostModel =  new eventPost;
+
+								// Fetching all post values
+								var postImage 	  = $('input[name="photo"]')[0].files[0];
+								var imagePath = '';
+								var timestamp = self.model.get("currentNum");			
+								var currentNum = parseInt(timestamp) + 1;								
+								var userType = $("#block_id").val();
+								var eventIDObj = self.model.get("id");
+								var postBy = 'by User';
+								if(userType === 'KfosZEHxkFU30VRkVlj'){
+									userType = 'admin';
+									eventModelID = self.model.get('adminCode');
+									postBy = 'by Admin';
+								}
+								else
+								{
+									eventModelID = eventIDObj;
+								}							
+
+								
+								var eventPostsCollectionObj = new eventPostsCollection([],{event_id: eventIDObj});
+
+								// If Post Image is not blanked
+								if(postImage != null)
+								{
+									$(".se-pre-con").fadeOut(2000);
+						            
+				            		//$(this).dialog('destroy').remove();
+				            		version='original';
+				            		self.completed_files = [];
+				            		self.number_of_files = 1;
+				            		var folder = "images";
+				            		self.storageRef = storage.ref();
+				            		var uploadTask = self.storageRef.child(folder + "/" + postImage.name).put(postImage);
+				                   //Start uploadTask
+				                   uploadTask.on('state_changed', function (snapshot) 
+				                   {
+				                   	var progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+				                       //this.onProgress(progress)
+				                   },
+				                   function (error)
+				                   {
+				                   	console.log("error")
+				                   }
+				                   ,function ()
+				                   {
+
+				                   	var downloadURL = uploadTask.snapshot.downloadURL;
+				                   	self.completed_files.push({url: downloadURL, version: version})
+				                   	if (self.completed_files.length == self.number_of_files)
+				                   	{
+				                   		imagePath = downloadURL;
+
+				                   		if(typeof (self.postModel) !== "undefined"){				               			
+				                   			self.postModel.set('image', imagePath);
+				                   			self.postModel.set('title', postTitle);
+				                   			self.postModel.set('description', postDescription);
+				                   			eventPostsCollectionObj.create(self.postModel.toJSON());
+						               			//self.postModel.clear();
+						               		}
+						               		else{
+						               			eventPostModel.set('title',postTitle);
+						               			eventPostModel.set('description',postDescription);
+						               			eventPostModel.set('timestamp',timestamp);								
+						               			eventPostModel.set('hasSurvey', 'false');
+						               			eventPostModel.set('isAdmin', 'false');
+						               			eventPostModel.set('name', postBy);
+						               			eventPostModel.set('image',imagePath);
+						               			eventPostModel.set('date', postCreationDate);
+
+						               			self.model.set('currentNum',currentNum);
+
+						               			eventPostsCollectionObj.create(eventPostModel.toJSON());
+						               		}
+						               		theDialog.dialog("close");	
+						               		var router = new MyRouter;
+						               		router.navigate("event/"+eventModelID+"/new", { trigger: true, replace: true });
+						               						               		
+
+						               	}
+						              })
+				               }
+				               else
+				               {
+				               	if(typeof (self.postModel) !== "undefined"){	
+				               		if(typeof self.postModel.get("id") === 'undefined')
+				               		{
+				               			self.model.set('currentNum',currentNum);
+				               			self.postModel.set('timestamp', timestamp);
+				               			self.postModel.set('name', postBy);
+				               		}		               			
+				               		self.postModel.set('title', postTitle);
+				               		self.postModel.set('description', postDescription);
+				               		eventPostsCollectionObj.create(self.postModel.toJSON());				               			
+				               	}
+				               	else
+				               	{
+				               		eventPostModel.set('title',postTitle);
+				               		eventPostModel.set('description',postDescription);
+				               		eventPostModel.set('timestamp',timestamp);								
+				               		eventPostModel.set('hasSurvey', 'false');
+				               		eventPostModel.set('isAdmin', 'false');
+				               		eventPostModel.set('name', postBy);
+				               		eventPostModel.set('image','');
+				               		eventPostModel.set('date', postCreationDate);
+
+				               		self.model.set('currentNum',currentNum);
+
+				               		eventPostsCollectionObj.create(eventPostModel.toJSON());
+				               	}
+
+				               	$(".se-pre-con").fadeOut(2000);
+				               	//window.location.href= window.location.href+'/'+eventModelID+'/new'; 
+				                var router = new MyRouter;
+				               	router.navigate("event/"+eventModelID+"/new", { trigger: true, replace: true });
+
+				               	theDialog.dialog("close");
+				               	$(this).dialog('destroy').remove();									
+				               }
+
+				           }
+				       }
+				   }]
+				}); 
+theDialog.dialog("open");
+
+},
+
+
+
+createSurvey: function (e) {
+
+            //provisioning for Post to move on Survey screen with title and descrition
+            // Creating New Post Model
+            if(typeof (this.postModel) !== "undefined"){
+            	
+            	var createSurveyView = new createSurvey({model: this.model, postModel: this.postModel});
+            }
+            else{
+
+            	var eventPostModel =  new eventPost;
+
+				// Fetching all post values
+
+				var postDescription 	= $("#description").val();	
+				var postCreationDate 	= Date(); 
+
+				eventPostModel.set('description', postDescription);
+				eventPostModel.set('image', '');
+				eventPostModel.set('hasSurvey', 'true');
+				eventPostModel.set('isAdmin', 'false');				
+				eventPostModel.set('date', postCreationDate);
+
+				var createSurveyView = new createSurvey({model: this.model, postModel: eventPostModel});
+
+			}
+
+		},
+
+		cancelPost: function () { 
+
+			var userType = $("#block_id").val();
+
+			if(userType === 'KfosZEHxkFU30VRkVlj'){
+				userType = 'admin';
+				eventModelID = this.model.get('adminCode');
+			}
+			else
+			{
+				eventModelID = this.model.get('id');;
+			}
+			
+			var router = new MyRouter;
+
+			router.navigate("event/"+eventModelID+"/new", { trigger: true});	
+		}
+	});
+
+
+        // Home Page view
+        var homePage = Backbone.View.extend({
+        	
+        	el: '#page-top',        	
+        	
+        	homepageTemplate: _.template($('#homeTemplate').html()),
+
+        	events: {
+        		"click .clickhere": "createEvent",        		
+        		"click #showEvent": "showEvent",
+        	},
+
+        	initialize: function () {
+        		this.render();
+        		$.getJSON('//freegeoip.net/json/?callback=?', function(data) 
+        		{
+        			var userIPAddress = JSON.stringify(data.ip.split(".").join(""), null, 2);
+        			userIPAddress = userIPAddress.replace(/\"/g, '');
+        			$("#userIP").val(userIPAddress);
+
+        		}); 
+        	},
+
+        	render: function () {
+        		$(".showEvent").hide();
+        		this.$el.html(this.homepageTemplate);
+        		$('.loading').hide();
+        		return this;
+        	},
+
+        	createEvent: function () {
+        		var eventModel = new eventFBModel();
+        		var createEventView = new createEvent( {'model': eventModel} );
+        	},
+
+        	showEvent: function () {
+
+        		$(".id_error").text('');
+        		$( "#event_id" ).keypress(function() {
+        			$(".id_error").text('');
+        		});
+
+        		eventID = $("#event_id").val().trim(); 
+
+        		if(eventID == '' || eventID.length > 8 || eventID.length < 4){
+        			$(".id_error").text('Invalid event id please try again.');
+        			return false;
+        		}else{
+        			var originalEventId = eventID;
+        		
+	        		if(eventID.length == 8)
+	        		{
+	        			eventID = eventID.substring(4, 8);
+		      			//flag use to identifed admin code used.
+		      			$('#block_id').val("KfosZEHxkFU30VRkVlj");
+		      		}
+		      		
+		      		$(".se-pre-con").fadeOut('slow');
+		      		var router = new MyRouter;
+
+					router.navigate("event/"+originalEventId+"/new", { trigger: true});	
+        		}
+
+        		
+
+	      		//$('#block_id').val(eventID);
+				//Actual sync call to FIREBASE
+				/*eventFBCollectionObject = new eventsFBCollection;
+
+				eventFBCollectionObject.on('sync', function(collection) {
+
+					eventModel = eventFBCollectionObject.get(eventID);
+
+					if(!eventModel){
+						$(".id_error").text('Invalid event id please try again.');
+						return false;
+					}
+
+
+		      		//Navigating to ShowEvent View
+		      		var showEventView = new showEvent({ model: eventModel });
+					 });*/
+				
+	      	},
+	      });
+
+        MyRouter = Backbone.Router.extend({	  	  
+        	routes: {
+        		"event/:id": "showEvent",
+        		"event/:id/new": "showEventNew"	  		  	
+        	}, 
+        	showEventNew: function(id){  
+        		if(document.URL.indexOf("/new") !==-1){
+        			var eventURL = window.location.href.replace('/new', '');
+        			setTimeout(function(){  window.location.reload();});
+
+        			window.location.href= eventURL;   				
+        		}
+
+        	},
+
+        	showEvent: function(id){
+
+        		var eventCollection = new eventsFBCollection;
+        		if(id.length == 8)
+        		{
+        			id = id.substring(4, 8);
+        			$('#block_id').val("KfosZEHxkFU30VRkVlj");
+
+        		}
+        		eventCollection.on('sync', function(collection) {	    		
+		    	// Fetch Events					
+		    	var eventModel = collection.get(id);
+
+		    	if(!eventModel)
+		    	{
+		    		var homepageView = new homePage();	
+					$(".id_error").text('Invalid event id please try again.');
+					return false;
+				}					
+		    	else{
+
+		    		$.getJSON('//freegeoip.net/json/?callback=?', function(data) 
+			    	{
+			    		var userIPAddress = JSON.stringify(data.ip.split(".").join(""), null, 2);
+			    		userIPAddress = userIPAddress.replace(/\"/g, '');
+			    		$("#userIP").val(userIPAddress);
+			    		var showEventView = new showEvent({model : eventModel});
+			    	}); 
+		    	}    
+		    });				 				                	  
+        	}	
+        });
+
+        // Set Cookie Function
+        function setCookie(cname, cvalue, exdays) {
+		    var d = new Date();
+		    d.setTime(d.getTime() + (exdays));
+		    var expires = "expires="+ d.toUTCString();
+		    document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/";
+		} 
+
+		// Get Cookie Value here
+		function getCookie(cname) {
+		    var name = cname + "=";
+		    var decodedCookie = decodeURIComponent(document.cookie);
+		    var ca = decodedCookie.split(';');
+		    for(var i = 0; i <ca.length; i++) {
+		        var c = ca[i];
+		        while (c.charAt(0) == ' ') {
+		            c = c.substring(1);
+		        }
+		        if (c.indexOf(name) == 0) {
+		            return c.substring(name.length, c.length);
+		        }
+		    }
+		    return false;
+		} 
+
+	// Check if either we are reloading page or not
+	if(document.URL.indexOf("#event") !==-1)
+	{ 	
+		// Animate loader off screen	 
+		$(".se-pre-con").fadeOut(2000);
+	}
+	else
+	{
+		var homepageView = new homePage();	
+		
+	}
+
+    //EventBoard App start point
+
+
+})(jQuery);
+myRouter = new MyRouter();	Backbone.history.start();
+</script>
+</body>
+</html>
